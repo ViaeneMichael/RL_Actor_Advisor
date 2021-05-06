@@ -44,7 +44,10 @@ def main():
             #17 - move left down & fire
     """
     output_size = env.action_space.n # 18 actions
-    print(env.ale.getScreenDims())
+    # Will need to resize the image -> computing power and square images (padding vs resizing best practice)
+    print(env.ale.getScreenDims()) # width: 160, height: 210
+    # env.getimage.resize(84,84)
+
 
     # For loop episodes
         # loop steps episode
