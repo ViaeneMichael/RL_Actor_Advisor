@@ -6,7 +6,7 @@ class SeaquestNet(nn.Module):
     """
     Neural network with...
     """
-    def __init__(self, input_size, hidden_size, output_size):
+    def __init__(self):
         # Images will be 84*84*3, a stack 3
         super().__init__()
         self.conv1 = nn.Conv2d(3,6,3)
@@ -25,3 +25,6 @@ class SeaquestNet(nn.Module):
         x = self.fc3(x)
         x = nn.Softmax(-1)(x)
         return x
+
+net = SeaquestNet()
+print(net.parameters())

@@ -1,5 +1,6 @@
 import gym
 from neuralnet import SeaquestNet
+from wrappers import WarpFrame, FrameStack
 
 # Neural net
 
@@ -18,8 +19,12 @@ EPSILON = 0.1
 GAMMA = 0.9
 LEARNING_RATE = 0.001
 """
-(screen_width, screen_height) = self.ale.getScreenDims()
+(screen_width, screen_height) = self.ale.getScreenDims() # width: 160, height: 210
 """
+def wrap_env(env):
+    env = WarpFrame(env)
+    return FrameStack(env, 3)
+
 def main():
     # Seaquest environment
     env = gym.make('Seaquest-v0')
@@ -45,9 +50,11 @@ def main():
     """
     output_size = env.action_space.n # 18 actions
     # Will need to resize the image -> computing power and square images (padding vs resizing best practice)
-    print(env.ale.getScreenDims()) # width: 160, height: 210
-    # env.getimage.resize(84,84)
-
+    # print(env.ale.getScreenDims())
+    # Resize the image of the Atari game to a 86*86 image with grayscale instead of RGB
+    # and add a stack of frames of 3 frames (in order to see the way that objects are moving
+    wrapped_env = wrap_env(env)
+    print(wrapped_env.ale.getScreenDims())
 
     # For loop episodes
         # loop steps episode
