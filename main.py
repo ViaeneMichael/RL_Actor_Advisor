@@ -1,4 +1,6 @@
 import gym
+import numpy as np
+
 from neuralnet import SeaquestNet
 from wrappers import WarpFrame, FrameStack
 
@@ -16,7 +18,6 @@ from wrappers import WarpFrame, FrameStack
 
 EPISODES = 100000
 EPSILON = 0.1
-GAMMA = 0.9
 LEARNING_RATE = 0.001
 """
 (screen_width, screen_height) = self.ale.getScreenDims() # width: 160, height: 210

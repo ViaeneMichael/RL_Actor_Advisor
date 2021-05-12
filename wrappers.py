@@ -4,6 +4,7 @@ import cv2
 from gym import spaces
 from collections import deque
 
+#source: https://github.com/DarylRodrigo/rl_lib
 class WarpFrame(gym.ObservationWrapper):
     def __init__(self, env, width=86, height=86, grayscale=True, dict_space_key=None):
         """
