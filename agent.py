@@ -3,6 +3,7 @@ from memory import PPOMemory
 import numpy as np
 import torch
 import gym
+from scipy.stats import entropy
 
 
 from neuralnet import SeaquestNet
@@ -28,7 +29,7 @@ class Agent:
 
 
     def get_action(self, state):
-        probas_torch = self.net.policy(torch.from_numpy(state))
+        probas_torch = self.net.policy(torch.tensor(state))
         probas = probas_torch.detach().numpy()[0] # tensor to 1d np array
         action = np.random.choice(range(ACTIONSPACE), p=probas)
         val = self.net.stateValue(state)
@@ -41,11 +42,12 @@ class Agent:
         score = 0
         done = False
         steps = 0
+        print(state)
 
         while not done:
             probas, action, val = self.get_action(state)
             #perform step
-            next_state, reward, done, _ = self.env.step((action))
+            next_state, reward, done, _ = self.env.step(action)
             steps += 1
             score += reward
             self.store_experience(state, action, probas, val, reward, done)
@@ -55,8 +57,6 @@ class Agent:
 
         self.save_model()
         return score
-
-
 
 
     def save_model(self):
@@ -92,6 +92,8 @@ class PPOTrainer:
 
 
     def train(self, memory):
+        C1 = 0.5
+        C2 = 0.5
         for epoch in range(self.EPOCHS):
             states, actions, probas, values, rewards, dones, batches = memory.generate_batches()
             advantages = self.advantages(rewards, values)
@@ -101,13 +103,15 @@ class PPOTrainer:
             for batch in batches:
                 states = torch.from_numpy(states[batch])
                 old_probas = torch.from_numpy(probas[batch])
-                actions = torch.from_numpy(actions[batch]) # needed for log_probs
+                actions = torch.from_numpy(actions[batch])  # needed for log_probs
 
                 new_probas = self.net.policy(states)
                 critic_values = self.net.stateValue(states)
 
+                critic_values = torch.squeeze(critic_values)
+
                 new_log_probas = new_probas.log_prob(actions)
-                old_log_probas = old_probas.log_prob(actions) #moest log_prob al eerder? not sure
+                old_log_probas = old_probas.log_prob(actions)  #moest log_prob al eerder? not sure
 
                 prob_ratios = new_log_probas.exp() / old_log_probas.exp()
                 weighted_probs = advantages[batch] * prob_ratios
@@ -115,8 +119,20 @@ class PPOTrainer:
                 actor_loss = -torch.min(weighted_probs, clipped_weighted_probs).mean()
                 #mask value -> dones is 0's or 1's????????? for Advantages
 
-                returns = advantages[batch] + values[batch] # waarom dit???????????
-                critic_loss = (returns-critic_values)**2
+                returns = advantages[batch] + values[batch]
+                critic_loss = ((returns-critic_values)**2).mean()
+
+                entropy_loss = new_probas.entropy()
+
+                total_loss = actor_loss + (C1 * critic_loss) - (C2 * entropy_loss)
+
+                self.net.optimizer.zero_grad()
+                total_loss.backward()
+                self.net.optimizer.step()
+
+            memory.clear()
+
+
 
 
 

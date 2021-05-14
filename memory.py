@@ -35,7 +35,7 @@ class PPOMemory:
         self.rewards.append(reward)
         self.dones.append(done)
 
-    def clear_memory(self):
+    def clear(self):
         self.states = []
         self.probs = []
         self.actions = []
