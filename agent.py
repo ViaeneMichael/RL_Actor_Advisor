@@ -29,6 +29,7 @@ class Agent:
 
 
     def get_action(self, state):
+        print(torch.tensor(state).shape)
         probas_torch = self.net.policy(torch.tensor(state))
         probas = probas_torch.detach().numpy()[0] # tensor to 1d np array
         action = np.random.choice(range(ACTIONSPACE), p=probas)
@@ -42,10 +43,14 @@ class Agent:
         score = 0
         done = False
         steps = 0
-        print(state)
+        # print(state)
 
         while not done:
-            probas, action, val = self.get_action(state)
+            train_x = np.array(state).reshape(3, 1, 86, 86)
+            train_x = torch.from_numpy(train_x)
+            print("Type")
+            print(train_x.type())
+            probas, action, val = self.get_action(train_x.float())
             #perform step
             next_state, reward, done, _ = self.env.step(action)
             steps += 1

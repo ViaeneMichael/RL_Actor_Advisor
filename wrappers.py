@@ -84,7 +84,8 @@ class FrameStack(gym.Wrapper):
 
     def _get_ob(self):
         assert len(self.frames) == self.k
-        return LazyFrames(list(self.frames))
+        return list(self.frames)
+        #LazyFrames(list(self.frames))
 
 class LazyFrames(object):
     def __init__(self, frames):

@@ -11,11 +11,11 @@ class SeaquestNet(nn.Module):
     """
     def __init__(self, learning_rate, chkpt_dir='tmp/ppo'):
         # Images will be 84*84*3, a stack 3
-        super().__init__()
+        super(SeaquestNet, self).__init__()
         self.checkpoint_file = os.path.join(chkpt_dir, 'actor_seaquest_ppo')
         self.lr = learning_rate
         self.body = nn.Sequential(
-            nn.Conv2d(3, 6, 3),
+            nn.Conv2d(1, 6, 3),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
             nn.Conv2d(6, 16, 3),
@@ -42,6 +42,12 @@ class SeaquestNet(nn.Module):
         )
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
+
+    def forward(self, x):
+        x = self.body(x)
+        x = self.policy(x)
+        return x
+
     # https://www.datahubbs.com/two-headed-a2c-network-in-pytorch/
     def convOutput(self, state):
         return self.body(state)

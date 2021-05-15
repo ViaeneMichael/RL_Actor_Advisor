@@ -43,7 +43,7 @@ def main():
     """
     output_size = env.action_space.n # 18 actions
     # Will need to resize the image -> computing power and square images (padding vs resizing best practice)
-    # print(env.ale.getScreenDims())
+    #  print(env.ale.getScreenDims())
     # Resize the image of the Atari game to a 86*86 image with grayscale instead of RGB
     # and add a stack of frames of 3 frames (in order to see the way that objects are moving
     agent = Agent(env, EPSILON, GAMMA, 0.0001, PPOTrainer, 5)
