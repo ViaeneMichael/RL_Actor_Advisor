@@ -9,13 +9,14 @@ class SeaquestNet(nn.Module):
     """
     Neural network with...
     """
-    def __init__(self, learning_rate, chkpt_dir='tmp/ppo'):
+    def __init__(self, learning_rate, input_shape,  chkpt_dir='tmp/ppo'):
         # Images will be 84*84*3, a stack 3
         super(SeaquestNet, self).__init__()
+        self.input_shape = input_shape
         self.checkpoint_file = os.path.join(chkpt_dir, 'actor_seaquest_ppo')
         self.lr = learning_rate
         self.body = nn.Sequential(
-            nn.Conv2d(1, 6, 3),
+            nn.Conv2d(input_shape[0], 6, kernel_size=3),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
             nn.Conv2d(6, 16, 3),
@@ -25,15 +26,15 @@ class SeaquestNet(nn.Module):
         )
 
         self.value = nn.Sequential( # value of state
-            nn.Linear(16*20*20, 120),
+            nn.Linear(5776, 120),
             nn.ReLU(),
             nn.Linear(120, 84),
             nn.ReLU(),
             nn.Linear(84, 1)
         )
 
-        self.policy = nn.Sequential( # probabilities
-            nn.Linear(16 * 20 * 20, 120),
+        self._policy = nn.Sequential( # probabilities
+            nn.Linear(5776, 120),
             nn.ReLU(),
             nn.Linear(120, 84),
             nn.ReLU(),
@@ -43,17 +44,17 @@ class SeaquestNet(nn.Module):
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
 
-    def forward(self, x):
-        x = self.body(x)
-        x = self.policy(x)
-        return x
+    # def forward(self, x):
+    #     x = self.body(x)
+    #     x = self._policy(x)
+    #     return x
 
     # https://www.datahubbs.com/two-headed-a2c-network-in-pytorch/
     def convOutput(self, state):
         return self.body(state)
 
     def policy(self, state):
-        return Categorical(self.policy(self.convOutput(state))) # make it a distribution to use log_prob later
+        return Categorical(self._policy(self.convOutput(state))) # make it a distribution to use log_prob later
 
     def stateValue(self, state):
         return self.value(self.convOutput(state))

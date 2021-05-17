@@ -1,7 +1,7 @@
 import gym
 import numpy as np
 
-from wrappers import WarpFrame, FrameStack
+from wrappers import *
 from agent import Agent
 from agent import PPOTrainer
 
@@ -13,14 +13,14 @@ GAMMA = 0.9
 """
 (screen_width, screen_height) = self.ale.getScreenDims() # width: 160, height: 210
 """
-def wrap_env(env):
-    env = WarpFrame(env)
-    return FrameStack(env, 3)
+
 
 def main():
     # Seaquest environment
-    env = gym.make('Seaquest-v0')
-    env = wrap_env(env)
+    env_id = "Seaquest-v0"
+    env = make_atari(env_id)
+    env = wrap_deepmind(env)
+    env = wrap_pytorch(env)
     """
     # 0 - standing still
             # 1 - standing still & fire
@@ -46,11 +46,9 @@ def main():
     #  print(env.ale.getScreenDims())
     # Resize the image of the Atari game to a 86*86 image with grayscale instead of RGB
     # and add a stack of frames of 3 frames (in order to see the way that objects are moving
-    agent = Agent(env, EPSILON, GAMMA, 0.0001, PPOTrainer, 5)
+    agent = Agent(env, EPSILON, GAMMA, 0.0001, PPOTrainer, 4)
     for episode in range(10):
         agent.do_epoch()
-    wrapped_env = wrap_env(env)
-    print(wrapped_env.ale.getScreenDims())
 
     # For loop episodes
         # loop steps episode
