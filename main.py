@@ -4,7 +4,7 @@ import numpy as np
 from wrappers import *
 from agent import Agent
 from agent import PPOTrainer
-
+from gym import envs
 
 EPISODES = 100000
 EPSILON = 0.1
@@ -13,6 +13,7 @@ GAMMA = 0.9
 """
 (screen_width, screen_height) = self.ale.getScreenDims() # width: 160, height: 210
 """
+
 
 
 def main():
@@ -47,13 +48,11 @@ def main():
     # Resize the image of the Atari game to a 86*86 image with grayscale instead of RGB
     # and add a stack of frames of 3 frames (in order to see the way that objects are moving
     agent = Agent(env, EPSILON, GAMMA, 0.0001, PPOTrainer, 4)
-    for episode in range(10):
-        agent.do_epoch()
+    avg_cum_reward = 0
+    for episode in range(100000):
+        score = agent.do_episode()
+        avg_cum_reward += score
+        print("Avg cum reward of episode: " + str(episode) + "....." + str(avg_cum_reward / (episode + 1)))
 
-    # For loop episodes
-        # loop steps episode
-
-
-    # Save scores
 
 main()

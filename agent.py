@@ -26,16 +26,43 @@ class Agent:
         self.epsilon = epsilon
         self.gamma = gamma
         self.learning_rate = learning_rate
+
         self.net = SeaquestNet(learning_rate, env.observation_space.shape)
+        self.net.load_checkpoint()
+
         self.memory = PPOMemory(batch_size, MEMORY_SIZE)
         self.trainer = trainer_class(self.net)
 
     def store_experience(self, state, action, probs, val, reward, done):
         self.memory.store_experience(state, action, probs, val, reward, done )
 
+    def to_ram(self, ale):
+        ram_size = ale.getRAMSize()
+        ram = np.zeros((ram_size), dtype=np.uint8)
+        ale.getRAM(ram)
+        return ram
+
+    def advice(self, probas_torch):
+        ram = self.to_ram(self.env.ale)
+        depth_enc = map(int, list(bin(ram[97] - 13)[2:].rjust(7, '0')))
+        oxy_full = 1 if ram[102] == 64 else 0
+        oxy_low = 1 if ram[102] <= 4 else 0
+        diver_found = 1 if ram[62] > 0 else 0
+        # ups: 2,6,7,10,14,15
+        # downs: 5,8,9,13,16,17
+        # depth: surface level = 13
+        #depth bottom =
+
+        #rules: als 6 divers, ups
+        #rules: no divers and enough oxygen , not higher than 20 depth
+        #rules: oxy low, ups
+
+        print(ram[97])
+
 
     def get_action(self, state):
         probas_torch = self.net.policy(state)
+        self.advice(probas_torch)
         action = probas_torch.sample()
         proba = torch.squeeze(probas_torch.log_prob(action)).item()
         action = torch.squeeze(action).item()
@@ -45,7 +72,7 @@ class Agent:
         val = torch.squeeze(val).item()
         return proba, action, val
 
-    def do_epoch(self):
+    def do_episode(self):
         # for 1 epoch
         state = self.env.reset()
         score = 0
@@ -99,9 +126,6 @@ class PPOTrainer:
             advantages[t] = delta_t
         return advantages
 
-
-
-
     def train(self, memory):
         C1 = 0.5
         C2 = 0.5
@@ -110,10 +134,13 @@ class PPOTrainer:
             advantages = self.advantages(rewards, values, dones)
 
             advantages = torch.from_numpy(advantages) #make tensor
-
-            #todo shuffle stuff
+            p = np.random.permutation(len(states))
+            states = states[p]
+            actions = actions[p]
+            probas = probas[p]
+            values = values[p]
+            advantages = advantages[p]
             states_batch = torch.FloatTensor(states)
-            # states = Variable(torch.FloatTensor(states[batch]).unsqueeze(0), volatile=True)
             old_probas = torch.from_numpy(probas)
             actions_batch = torch.from_numpy(actions)  # needed for log_probs
 
@@ -128,7 +155,6 @@ class PPOTrainer:
             weighted_probs = advantages * prob_ratios
             clipped_weighted_probs = torch.clamp(prob_ratios, 1-self.CLIP, 1+self.CLIP)*advantages
             actor_loss = -torch.min(weighted_probs, clipped_weighted_probs).mean()
-            #mask value -> dones is 0's or 1's????????? for Advantages
 
             returns = advantages + values
             critic_loss = ((returns-critic_values)**2)

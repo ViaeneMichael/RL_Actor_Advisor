@@ -28,8 +28,6 @@ class PPOMemory:
         self.vals.append(vals)
         self.rewards.append(reward)
         self.dones.append(done)
-        print("Store experience")
-        print(len(self.states))
 
     def clear(self):
         self.states = []
