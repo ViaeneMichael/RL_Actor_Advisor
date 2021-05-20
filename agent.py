@@ -57,9 +57,6 @@ class Agent:
         #rules: no divers and enough oxygen , not higher than 20 depth
         #rules: oxy low, ups
 
-        print(ram[97])
-
-
     def get_action(self, state):
         probas_torch = self.net.policy(state)
         self.advice(probas_torch)
@@ -105,7 +102,7 @@ class Agent:
 class PPOTrainer:
     GAMMA = 0.9
     LAMBDA = 0.95
-    EPOCHS = 8
+    EPOCHS = 1
     CLIP = 0.2
     def __init__(self, net):
         self.net = net
