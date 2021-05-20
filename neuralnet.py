@@ -44,17 +44,13 @@ class SeaquestNet(nn.Module):
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
 
-    # def forward(self, x):
-    #     x = self.body(x)
-    #     x = self._policy(x)
-    #     return x
 
     # https://www.datahubbs.com/two-headed-a2c-network-in-pytorch/
     def convOutput(self, state):
         return self.body(state)
 
     def policy(self, state):
-        return Categorical(self._policy(self.convOutput(state))) # make it a distribution to use log_prob later
+        return self._policy(self.convOutput(state)) # make it a distribution to use log_prob later
 
     def stateValue(self, state):
         return self.value(self.convOutput(state))
@@ -64,23 +60,4 @@ class SeaquestNet(nn.Module):
 
     def load_checkpoint(self):
         self.load_state_dict(torch.load(self.checkpoint_file))
-
-
-
-    #     self.conv1 = nn.Conv2d(3,6,3)
-    #     self.conv2 = nn.Conv2d(6,16,3)
-    #     self.pool = nn.MaxPool2d(2,2)
-    #     self.fc1 = nn.Linear(16*20*20, 120) # ((84-3+1)/2-3+1)/2=20 (W-F+2P)/S+1
-    #     self.fc2 = nn.Linear(120,84)
-    #     self.fc3 = nn.Linear(84,18)
-    #
-    # def forward(self, x):
-    #     x = self.pool(F.relu(self.conv1(x)))
-    #     x = self.pool(F.relu(self.conv2(x)))
-    #     x = x.view(-1,16*20*20)
-    #     x = F.relu(self.fc1(x))
-    #     x = F.relu(self.fc2(x))
-    #     x = self.fc3(x)
-    #     x = nn.Softmax(-1)(x)
-    #     return x
 

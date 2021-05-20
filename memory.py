@@ -1,7 +1,7 @@
 import numpy as np
 
 class PPOMemory:
-    def __init__(self, batch_size, memory_size):
+    def __init__(self, memory_size):
         self.memory_size = memory_size
         self.states = []
         self.probs = []
@@ -9,8 +9,6 @@ class PPOMemory:
         self.actions = []
         self.rewards = []
         self.dones = []
-
-        self.batch_size = batch_size
 
     def generate_batches(self):
         return np.array(self.states),\
