@@ -10,11 +10,7 @@ LEARNING_RATE = 0.0001
 """
 
 def main():
-    # Seaquest environment
-    env_id = "Seaquest-v0"
-    env = make_atari(env_id)
-    env = wrap_deepmind(env)
-    env = wrap_pytorch(env)
+
     """
             # 0 - standing still
             # 1 - standing still & fire
@@ -40,14 +36,33 @@ def main():
     #  print(env.ale.getScreenDims())
     # Resize the image of the Atari game to a 86*86 image with grayscale instead of RGB
     # and add a stack of frames of 3 frames (in order to see the way that objects are moving
-    agent = Agent(env, LEARNING_RATE, PPOTrainer)
-    avg_cum_reward = 0
-    f = open("rewards.txt","a")
-    for episode in range(100000):
-        score = agent.do_episode()
-        avg_cum_reward += score
-        f.write(str(avg_cum_reward/ (episode + 1))+"\n")
-        print("Avg cum reward of episode: " + str(episode) + "....." + str(avg_cum_reward / (episode + 1)))
-    f.close()
+
+    mem_sizes = [12, 24, 48]
+    learning_rates = [0.001, 0.0001, 0.00001]
+    lambdas = [0.9, 0.95, 0.99]
+    gammas = [0.9, 0.95, 0.99]
+    c1s = [0.5, 1]
+
+    for i in range(len(lambdas) * len(gammas) * len(c1s)):
+        lambd = lambdas[i % 3]
+        gamma = gammas[(i // 3) % 3]
+        c1 = c1s[i // 9]
+        for j in range(10):
+            # Seaquest environment
+            env_id = "Seaquest-v0"
+            env = make_atari(env_id)
+            env = wrap_deepmind(env)
+            env = wrap_pytorch(env)
+            agent = Agent(env, learning_rates[1], mem_sizes[0], gamma, lambd, c1, PPOTrainer)
+            avg_cum_reward = 0
+            f = open("rewards" + str(i) + "_" + str(j) + ".txt", "a")
+            for episode in range(2000):
+                score = agent.do_episode()
+                avg_cum_reward += score
+                f.write(str(avg_cum_reward / (episode + 1)) + "\n")
+                print("Avg cum reward of episode: " + str(episode) + "....." + str(avg_cum_reward / (episode + 1)))
+            f.close()
+
+
 
 main()

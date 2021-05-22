@@ -8,10 +8,6 @@ from neuralnet import SeaquestNet
 
 MAX_MEMORY = 10000
 ACTIONSPACE = 18
-MEMORY_SIZE = 12
-GAMMA = 0.99
-LAMBDA = 0.95
-EPOCHS = 4
 CLIP = 0.2
 
 #Cuda
@@ -19,7 +15,7 @@ USE_CUDA = torch.cuda.is_available()
 Variable = lambda *args, **kwargs: autograd.Variable(*args, **kwargs).cuda() if USE_CUDA else autograd.Variable(*args, **kwargs)
 
 class Agent:
-    def __init__(self, env,  learning_rate, trainer_class):
+    def __init__(self, env,  learning_rate, mem_size, gamma, lamb, c1,  trainer_class):
         self.env = env
         self.learning_rate = learning_rate
 
@@ -27,8 +23,8 @@ class Agent:
 
         # self.net.load_checkpoint()
 
-        self.memory = PPOMemory(MEMORY_SIZE)
-        self.trainer = trainer_class(self.net)
+        self.memory = PPOMemory(mem_size)
+        self.trainer = trainer_class(self.net, gamma, lamb, c1, 4) # epochs hardcoded 4
 
     def store_experience(self, state, action, probs, val, reward, done):
         self.memory.store_experience(state, action, probs, val, reward, done )
@@ -114,24 +110,27 @@ class Agent:
         self.net.load_checkpoint()
 
 class PPOTrainer:
-    def __init__(self, net):
+    def __init__(self, net, gamma, lamb, c1, epochs):
         self.net = net
+        self.GAMMA = gamma
+        self.LAMBDA = lamb
+        self.C1 = c1
+        self.EPOCHS = epochs
 
     def advantages(self, rewards, values, dones):
         advantages = np.zeros(len(rewards), dtype=np.float32)
         delta_t = 0.0
-        for t in range(len(rewards)-2,-1,-1): # index 18 -> 0
+        for t in range(len(rewards)-2, -1, -1): # index 18 -> 0
             mask = 0 if dones[t] else 1
-            factor = (GAMMA*LAMBDA)
+            factor = (self.GAMMA*self.LAMBDA)
             delta_t *= factor
-            delta_t = mask * delta_t + rewards[t] + mask * GAMMA*values[t+1]-values[t]
+            delta_t = mask * delta_t + rewards[t] + mask * self.GAMMA*values[t+1]-values[t]
             advantages[t] = delta_t
         return advantages
 
     def train(self, memory):
-        C1 = 0.5
         C2 = 0.01
-        for epoch in range(EPOCHS):
+        for epoch in range(self.EPOCHS):
             states, actions, probas, values, rewards, dones = memory.generate_batches()
             advantages = self.advantages(rewards, values, dones)
 
@@ -164,7 +163,7 @@ class PPOTrainer:
 
             entropy_loss = new_probas.entropy().mean()
 
-            total_loss = actor_loss + (C1 * critic_loss) - (C2 * entropy_loss)
+            total_loss = actor_loss + (self.C1 * critic_loss) - (C2 * entropy_loss)
             self.net.optimizer.zero_grad()
             total_loss.backward()
             self.net.optimizer.step()
