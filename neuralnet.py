@@ -9,11 +9,12 @@ class SeaquestNet(nn.Module):
     """
     Neural network with...
     """
-    def __init__(self, learning_rate, input_shape,  chkpt_dir='tmp/ppo'):
+    def __init__(self, learning_rate, input_shape,  chkpt_dir='tmp/ppo/actor_seaquest_ppo'):
         # Images will be 84*84*3, a stack 3
         super(SeaquestNet, self).__init__()
         self.input_shape = input_shape
-        self.checkpoint_file = os.path.join(chkpt_dir, 'actor_seaquest_ppo')
+        self.checkpoint_file = os.path.normpath(chkpt_dir)
+        print(self.checkpoint_file)
         self.lr = learning_rate
         self.body = nn.Sequential(
             nn.Conv2d(input_shape[0], 6, kernel_size=3),
@@ -50,7 +51,7 @@ class SeaquestNet(nn.Module):
         return self.body(state)
 
     def policy(self, state):
-        return self._policy(self.convOutput(state)) # make it a distribution to use log_prob later
+        return self._policy(self.convOutput(state))
 
     def stateValue(self, state):
         return self.value(self.convOutput(state))

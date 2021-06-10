@@ -45,7 +45,7 @@ class Agent:
         # ups: 2,6,7,10,14,15
         # downs: 5,8,9,13,16,17
         # depth: surface level = 13
-        # rules: als 6 divers, ups
+        # rules: if 6 divers, ups
         # rules: oxy low, ups
         # rules: no divers and enough oxygen , not higher than 20 depth
         ups = [2,6,7,10,14,15]
@@ -61,19 +61,30 @@ class Agent:
 
     #returns numpy array
     def combine_actor_and_advisor_policies(self, actor_probs, advisor_probs):
-        normalization_factor = np.dot(actor_probs,advisor_probs)
-        probas = np.multiply(actor_probs,advisor_probs)
-        if normalization_factor == 0:
-            print("Error")
-        return probas/normalization_factor
+        normalization_factor = np.dot(actor_probs, advisor_probs)
+        probas = np.multiply(actor_probs, advisor_probs)
+        combined_probas = probas/normalization_factor
+        # If there are numerical issues due to division do not return the combination
+        if not np.isfinite(combined_probas).all() or not np.any(combined_probas) : # if the result is all zeros or contains Nan/Inf
+            return actor_probs, normalization_factor
+        else:
+            return combined_probas, normalization_factor
+
+
 
     def get_action(self, state):
         actor_probs = self.net.policy(state)
         advisor_probs = self.advice()
-        probas_torch = self.combine_actor_and_advisor_policies(actor_probs.detach().numpy(), advisor_probs)
+        probas_torch, factor = self.combine_actor_and_advisor_policies(actor_probs.detach().numpy(), advisor_probs)
         probas_torch = Categorical(torch.from_numpy(probas_torch))
-        action = probas_torch.sample()
-        proba = torch.squeeze(probas_torch.log_prob(action)).item()
+        try:
+            action = probas_torch.sample()
+        except:
+            print(probas_torch)
+            print(actor_probs)
+            print(advisor_probs)
+            print(factor)
+        proba = torch.squeeze(Categorical(actor_probs).log_prob(action)).item()
         action = torch.squeeze(action).item()
 
         val = self.net.stateValue(state)
@@ -99,7 +110,7 @@ class Agent:
             state = next_state
         if len(self.memory.states) > 0:
             self.trainer.train(self.memory) # memory is cleared in train
-        self.save_model()
+        #self.save_model()
         return score
 
 
@@ -171,7 +182,7 @@ class PPOTrainer:
         memory.clear()
 
 
-
+#  used as reference: https://github.com/philtabor/Youtube-Code-Repository/blob/master/ReinforcementLearning/PolicyGradient/PPO/torch/ppo_torch.py
 
 
 
